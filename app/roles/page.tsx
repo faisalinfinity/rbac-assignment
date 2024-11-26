@@ -1,156 +1,220 @@
 'use client'
-import React, { useState } from 'react';
-import { Shield, Edit, Trash2 } from 'lucide-react';
+import React, { useState } from 'react'
+import { Shield, Edit, Trash2, Plus } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Role } from '@/types'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { useToast } from "@/hooks/use-toast"
+import useMain from '@/context/MainContext'
 
-// Define the type for roles
-type Role = {
-  id: number;
-  name: string;
-  description: string;
-};
 
-// Mock data
-const initialRoles: Role[] = [
-  { id: 1, name: 'Admin', description: 'Full access to all features' },
-  { id: 2, name: 'Editor', description: 'Can edit and publish content' },
-  { id: 3, name: 'Viewer', description: 'Can view content only' },
-];
+
 
 export default function RoleManagement() {
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
-  const [editingRole, setEditingRole] = useState<Role | null>(null);
+    const {roles, setRoles,permissions} = useMain()
+
+  const [editingRole, setEditingRole] = useState<Role | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { toast } = useToast()
 
   const handleEditRole = (role: Role) => {
-    setEditingRole(role);
-  };
+    setEditingRole(role)
+    setIsDialogOpen(true)
+  }
 
-  const handleDeleteRole = (roleId: number) => {
-    setRoles(roles.filter((role) => role.id !== roleId));
-  };
+  const handleDeleteRole = (roleId: string) => {
+    setRoles(roles.filter((role) => role.id !== roleId))
+    toast({
+      title: "Role Deleted",
+      description: "The role has been successfully deleted.",
+    })
+  }
 
   const handleSaveRole = (editedRole: Role) => {
-    setRoles(
-      roles.map((role) =>
-        role.id === editedRole.id ? editedRole : role
-      )
-    );
-    setEditingRole(null);
-  };
+    setRoles(roles.map((role) => (role.id === editedRole.id ? editedRole : role)))
+    setEditingRole(null)
+    setIsDialogOpen(false)
+    toast({
+      title: "Role Updated",
+      description: "The role has been successfully updated.",
+    })
+  }
+
+  const handleAddRole = (newRole: Omit<Role, 'id'>) => {
+    const id = (roles.length + 1).toString()
+    setRoles([...roles, { ...newRole, id }])
+    setIsDialogOpen(false)
+    toast({
+      title: "Role Added",
+      description: "A new role has been successfully added.",
+    })
+  }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Role Management</h1>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">Role Management</h1>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Add Role
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>{editingRole ? 'Edit Role' : 'Add New Role'}</DialogTitle>
+              <DialogDescription>
+                {editingRole ? 'Make changes to the role here. Click save when you\'re done.' : 'Enter the details for the new role here.'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.currentTarget)
+              const roleData = {
+                name: formData.get('name') as string,
+                description: formData.get('description') as string,
+                permissions: permissions
+                  .filter((permission) => formData.get(permission.name) === 'on')
+                  .map((permission) => permission.name)
+              }
+              if (editingRole) {
+                handleSaveRole({ ...editingRole, ...roleData })
+              } else {
+                handleAddRole(roleData)
+              }
+            }}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    defaultValue={editingRole?.name}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    defaultValue={editingRole?.description}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label className="text-right">
+                    Permissions
+                  </Label>
+                  <div className="col-span-3 space-y-2">
+                    {permissions.map((permission) => (
+                      <div key={permission.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={permission.name}
+                          name={permission.name}
+                          defaultChecked={editingRole?.permissions.includes(permission.name)}
+                        />
+                        <label
+                          htmlFor={permission.name}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {permission.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">{editingRole ? 'Save Changes' : 'Add Role'}</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Description
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Permissions
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {roles.map((role) => (
-              <tr key={role.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-gray-400 mr-2" />
-                    <div className="text-sm font-medium text-gray-900">
-                      {role.name}
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <AnimatePresence>
+              {roles.map((role) => (
+                <motion.tr
+                  key={role.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <Shield className="h-5 w-5 text-gray-400 mr-2" />
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{role.description}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleEditRole(role)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-2"
-                  >
-                    <Edit className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteRole(role.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{role.description}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {role.permissions.join(', ')}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleEditRole(role)}
+                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
+                    >
+                      <Edit className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleDeleteRole(role.id)}
+                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="h-5"/>
+
+                    </Button>
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
-
-      {editingRole && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-              Edit Role
-            </h3>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-                const description = (form.elements.namedItem('description') as HTMLTextAreaElement).value;
-
-                handleSaveRole({
-                  ...editingRole,
-                  name,
-                  description,
-                });
-              }}
-            >
-              <div className="mb-4">
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  id="name"
-                  defaultValue={editingRole.name}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  id="description"
-                  defaultValue={editingRole.description}
-                  rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div className="mt-5 sm:mt-6">
-                <button
-                  type="submit"
-                  className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
-  );
+  )
 }
+

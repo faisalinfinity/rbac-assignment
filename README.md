@@ -52,12 +52,8 @@ Before you begin, ensure you have met the following requirements:
 
 2. Install dependencies:
    ```bash
-   npm install
+   npm install --force
    ```
-
-3. Set up environment variables:
-   - Create a `.env.local` file in the root directory
-   - Add necessary configuration (e.g., API endpoints, authentication details)
 
 4. Run the development server:
    ```bash

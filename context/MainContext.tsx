@@ -5,9 +5,9 @@ import { Permission, Role, User as UserType } from '@/types';
 
 // Initial Data
 const initialUsers: UserType[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Admin', status: 'Active', avatar: '/placeholder.svg?height=40&width=40' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'Editor', status: 'Active', avatar: '/placeholder.svg?height=40&width=40' },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'Viewer', status: 'Inactive', avatar: '/placeholder.svg?height=40&width=40' },
+  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Admin', status: 'Active', avatar: '/dummy.png' },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'Editor', status: 'Active', avatar: '/dummy.png' },
+  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'Viewer', status: 'Inactive', avatar: '/dummy.png' },
 ];
 
 const initialRoles: Role[] = [

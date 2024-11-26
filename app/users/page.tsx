@@ -25,6 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import useMain from '@/context/MainContext'
 import { User as UserType } from '@/types'
+import Image from 'next/image'
 
 // Mock data
 
@@ -195,7 +196,7 @@ export default function UserManagement() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <img className="h-10 w-10 rounded-full" src={user.avatar} alt="" />
+                        <Image height={40} width={40} className="h-10 w-10 rounded-full" src={user.avatar} alt="" />
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</div>
